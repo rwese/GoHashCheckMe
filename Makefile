@@ -25,7 +25,7 @@ PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 .PHONY: all build test clean run deps lint fmt vet test-verbose test-race test-coverage bench help
 
 # Default target
-all: test build
+all: deps lint fmt vet test test-race test-coverage build
 
 # Build for current platform
 build:
