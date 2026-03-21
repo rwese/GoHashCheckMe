@@ -1,0 +1,64 @@
+run:
+  timeout: 2m
+  tests: true
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gofmt
+    - goimports
+    - misspell
+    - unconvert
+    - unparam
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+  govet:
+    enable-all: true
+    check-initialized: true
+  staticcheck:
+    checks:
+      - all
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/rwese/GoHashCheckMe
+
+# Exclude test files from strict linting
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 50
+  max-same-issues: 10
+  exclude-files:
+    - ".*_test\\.go$"
+  # Allow sync.Pool patterns in hash_check.go
+  exclude-rules:
+    - path: "hash_check\\.go"
+      linters:
+        - staticcheck
+      text: "SA6002"
+    # Skip fieldalignment warnings for small structs where optimization is negligible
+    - linters:
+        - govet
+      text: "fieldalignment"
+    # Skip cleanup operations where return values can't be meaningfully handled
+    - path: "audit\\.go"
+      linters:
+        - errcheck
+      text: "Error return value"
+    - path: "hash_check\\.go"
+      linters:
+        - errcheck
+      text: "Error return value"
+    - path: "workers\\.go"
+      linters:
+        - errcheck
+      text: "Error return value"
