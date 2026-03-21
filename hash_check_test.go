@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"sync"
 	"testing"
@@ -38,6 +40,63 @@ func TestHashFile(t *testing.T) {
 	_, err = hashFile("non-existent-file")
 	if err == nil {
 		t.Error("expected error for non-existent file")
+	}
+}
+
+func TestHashFileLarge(t *testing.T) {
+	// Create a larger temp file (1MB)
+	tmpfile, err := os.CreateTemp("", "test_large")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	// Create 1MB of data
+	largeContent := make([]byte, 1024*1024)
+	for i := range largeContent {
+		largeContent[i] = byte(i % 256)
+	}
+
+	if _, err := tmpfile.Write(largeContent); err != nil {
+		t.Fatal(err)
+	}
+	tmpfile.Close()
+
+	// Hash the file
+	hash, err := hashFile(tmpfile.Name())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify hash by computing it manually
+	h := sha256.New()
+	h.Write(largeContent)
+	expected := hex.EncodeToString(h.Sum(nil))
+
+	if hash != expected {
+		t.Errorf("hash mismatch for large file")
+	}
+}
+
+func TestHashFileEmpty(t *testing.T) {
+	// Create an empty temp file
+	tmpfile, err := os.CreateTemp("", "test_empty")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+	tmpfile.Close()
+
+	// Hash the empty file
+	hash, err := hashFile(tmpfile.Name())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// SHA256 of empty string
+	expected := "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	if hash != expected {
+		t.Errorf("expected hash %s, got %s", expected, hash)
 	}
 }
 
@@ -137,6 +196,105 @@ func TestRunCommand(t *testing.T) {
 			name:         "command with specific exit code",
 			command:      "exit 42",
 			expectedCode: 42,
+		},
+	}
+
+	tmpfile, err := os.CreateTemp("", "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+	tmpfile.Close()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := Config{
+				command: tt.command,
+				quiet:   false,
+			}
+			code := runCommand(cfg, tmpfile.Name())
+			if code != tt.expectedCode {
+				t.Errorf("expected exit code %d, got %d", tt.expectedCode, code)
+			}
+		})
+	}
+}
+
+func TestRunCommandWithFILEPlaceholder(t *testing.T) {
+	// Create a temp file with known content
+	tmpfile, err := os.CreateTemp("", "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	content := []byte("test content\n")
+	if _, err := tmpfile.Write(content); err != nil {
+		t.Fatal(err)
+	}
+	tmpfile.Close()
+
+	cfg := Config{
+		command: "cat $FILE",
+		quiet:   false,
+	}
+
+	code := runCommand(cfg, tmpfile.Name())
+	if code != 0 {
+		t.Errorf("expected exit code 0, got %d", code)
+	}
+}
+
+func TestRunCommandWithFILEPlaceholderAndQuotes(t *testing.T) {
+	// Create a temp file with a space in the name
+	tmpDir, err := os.MkdirTemp("", "test dir")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	tmpfile, err := os.CreateTemp(tmpDir, "test file")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	if _, err := tmpfile.Write([]byte("test")); err != nil {
+		t.Fatal(err)
+	}
+	tmpfile.Close()
+
+	cfg := Config{
+		command: "cat $FILE",
+		quiet:   false,
+	}
+
+	code := runCommand(cfg, tmpfile.Name())
+	if code != 0 {
+		t.Errorf("expected exit code 0, got %d", code)
+	}
+}
+
+func TestRunCommandStandaloneCommands(t *testing.T) {
+	tests := []struct {
+		name         string
+		command      string
+		expectedCode int
+	}{
+		{
+			name:         "standalone exit 0",
+			command:      "exit 0",
+			expectedCode: 0,
+		},
+		{
+			name:         "standalone exit 5",
+			command:      "exit 5",
+			expectedCode: 5,
+		},
+		{
+			name:         "exit with prefix",
+			command:      "exit 99",
+			expectedCode: 99,
 		},
 	}
 
