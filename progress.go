@@ -3,20 +3,18 @@ package main
 import (
 	"fmt"
 	"os"
-	"sync"
 	"sync/atomic"
 	"time"
 )
 
 type ProgressReporter struct {
+	startTime    time.Time
 	total        int
 	processed    int32
 	errors       int32
 	changed      int32
-	startTime    time.Time
 	showProgress bool
 	quiet        bool
-	mu           sync.Mutex
 }
 
 func NewProgressReporter(total int, showProgress, quiet bool) *ProgressReporter {

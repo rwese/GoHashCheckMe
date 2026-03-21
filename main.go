@@ -9,12 +9,12 @@ import (
 type Config struct {
 	command       string
 	hashesFile    string
-	audit         bool
-	update        bool
 	successCodes  map[int]bool
 	errorCodes    map[int]bool
-	filterOnCodes bool
 	workers       int
+	filterOnCodes bool
+	audit         bool
+	update        bool
 	showProgress  bool
 	quiet         bool
 }

@@ -1,3 +1,9 @@
-build
+build/
+dist/
 coverage.html
 coverage.out
+*.tmp
+*.bak
+.env
+.env.*
+.DS_Store

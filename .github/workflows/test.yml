@@ -34,5 +34,14 @@ jobs:
     - name: Run go vet
       run: make vet
     
+    - name: Run linter
+      run: |
+        if command -v golangci-lint >/dev/null 2>&1; then
+          make lint
+        else
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          make lint
+        fi
+    
     - name: Build
       run: make build
