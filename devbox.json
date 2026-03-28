@@ -1,13 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.14.2/.schema/devbox.schema.json",
   "packages": [
-    "golangci-lint@latest",
-    "go@1.24",
-    "gopls@latest"
+    "golangci-lint@2.1.6",
+    "go@1.24.3",
+    "gopls@0.18.1"
   ],
   "shell": {
     "init_hook": [
-      "echo 'Welcome to devbox!' > /dev/null"
+      "echo 'Welcome to GoHashCheckMe!' > /dev/null"
     ],
     "scripts": {
       "test": "go test -short ./...",
